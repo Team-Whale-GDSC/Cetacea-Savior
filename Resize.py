@@ -2,6 +2,9 @@ from os import environ, path, chdir, listdir, mkdir
 import sys
 from PIL import Image
 from pandas import DataFrame, to_datetime
+import cv2
+import numpy as np
+
 
 chdir(environ['USERPROFILE'] + "\\Desktop\\Whale Challenge\\")
 
@@ -36,5 +39,21 @@ def get_picture_dates():
     df['Date']= to_datetime(df['Date']) 
     print(df)
 
+
+
+def remove_sea():
+    img = cv2.imread("train_resized/-1/PM-WWA-20050513-243_resized.jpg")
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    mask = cv2.inRange(hsv, (100, 0, 0), (360, 100,50))
+
+    ## slice the green
+    imask = mask>0
+    green = np.zeros_like(img, np.uint8)
+    green[imask] = img[imask]
+
+    ## save 
+    cv2.imwrite("green_test.png", green)
+
 if __name__ == "__main__":
-    get_picture_dates()
+    remove_sea()
