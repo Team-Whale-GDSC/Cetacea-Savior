@@ -2,7 +2,7 @@ from os import environ, path, chdir, listdir, mkdir
 import sys
 from PIL import Image
 from pandas import DataFrame, to_datetime
-import cv2
+from cv2 import imread, COLOR_RGB2GRAY, ADAPTIVE_THRESH_GAUSSIAN_C, MORPH_OPEN, morphologyEx, getStructuringElement, imwrite, cvtColor, threshold, MORPH_RECT
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -40,10 +40,26 @@ def remove_sea():
             pass
         
         for pic in pics:
-            img = cv2.imread(path.join(train_resized_fldr, fldr, pic))
-            grey = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            ret, thresh = cv2.threshold(grey,50,255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
-            cv2.imwrite(path.join(train_preprocessed_fldr, fldr, pic),thresh)
+            img = imread(path.join(train_resized_fldr, fldr, pic))
+            grey = cvtColor(img, COLOR_RGB2GRAY)
+            ret, img = threshold(grey,50,255, ADAPTIVE_THRESH_GAUSSIAN_C)
+            
+            imwrite(path.join(train_preprocessed_fldr, fldr, pic + "_regular.jpg"), img)
+
+
+
+
+            kernel1 = np.ones((1, 1), np.uint8)
+            img1 = morphologyEx(img, MORPH_OPEN, kernel1, iterations=2)
+            imwrite(path.join(train_preprocessed_fldr, fldr, pic + "_kernel1.jpg"), img1)
+
+            kernel2 = np.ones((2, 2), np.uint8)
+            img2 = morphologyEx(img, MORPH_OPEN, kernel2, iterations=2)
+            imwrite(path.join(train_preprocessed_fldr, fldr, pic + "_kernel2.jpg"), img2)
+
+            kernel3 = np.ones((100, 100), np.uint8)
+            img3 = morphologyEx(img, MORPH_OPEN, kernel3, iterations=2)
+            imwrite(path.join(train_preprocessed_fldr, fldr, pic + "_kernel3.jpg"), img3)
 
 
 
