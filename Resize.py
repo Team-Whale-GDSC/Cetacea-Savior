@@ -34,7 +34,6 @@ def resize_images():
 def remove_sea():
     for fldr in listdir(train_resized_fldr):
         pics = listdir(train_resized_fldr + str(fldr))
-        print("ok")
         try:
             mkdir(path.join(train_preprocessed_fldr, fldr))
         except:
@@ -44,7 +43,7 @@ def remove_sea():
             img = cv2.imread(path.join(train_resized_fldr, fldr, pic))
             grey = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             ret, thresh = cv2.threshold(grey,50,255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
-            cv2.imwrite("tst/"+pic,thresh)
+            cv2.imwrite(path.join(train_preprocessed_fldr, fldr, pic),thresh)
 
 
 
