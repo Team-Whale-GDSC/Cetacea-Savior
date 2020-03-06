@@ -6,18 +6,17 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import Dense, Flatten
 
 
 chdir(environ['USERPROFILE'] + "\\Desktop\\Whale Challenge\\")
-
 raw_fldr = "raw/"
 train_fldr = "train/"
 train_resized_fldr = "train_resized/"
 train_preprocessed_fldr = "train_preprocessed/"
 raw_dirs = listdir(raw_fldr)
-
-
-img_shape    = (224,224, 1) # The image shape used by the model
 
 
 def resize_images():
@@ -29,7 +28,11 @@ def resize_images():
             pass
         for pic in pics:
             im = Image.open(path.join(train_fldr, fldr, pic))
-            im = im.resize((256,256), Image.ANTIALIAS)
+            if pic.endswith(".tif"):
+                im = im.convert("RGB")
+                im = im.resize((256,256), Image.ANTIALIAS)
+            else:
+                im = im.resize((256,256), Image.ANTIALIAS)
             im.save(path.join(train_resized_fldr, fldr, pic), 'JPEG', quality=95)
 
 
@@ -104,34 +107,59 @@ def remove_sea():
 from numpy import asarray
 
 def get_train_df():
-    pic_df_tmp = DataFrame(columns = ["pic_name", "pic_array"])
-    train_df = DataFrame(columns=["pic_name", "id", "date", "d_or_a"])
-    for fldr in listdir(raw_fldr):
-        for pic in listdir(raw_fldr + fldr):
-            if pic.endswith(".jpg"):
-                picdate = pic.split("-")[2][:8]
-                train_df.loc[len(train_df)] = [pic, "", picdate, 1]
-    train_df['date'] = to_datetime(train_df['date'])
-    
+    train_df = DataFrame(columns=["pic_name", "id", "date", "d_or_a","pic_array"])
     for fldr in listdir(train_preprocessed_fldr):
         whale_id = str(fldr)
         for pic in listdir(train_preprocessed_fldr + fldr):
-            train_df.loc[train_df.pic_name == pic, 'id'] = whale_id
-            image = Image.open(path.join(train_preprocessed_fldr, fldr, pic))
-            pic_df_tmp.loc[len(pic_df_tmp)] = [pic, asarray(image)]
+            if pic.endswith(".jpg") or pic.endswith(".tif"):
+                image = cv2.imread(path.join(train_preprocessed_fldr, fldr, pic))
 
-    train_df = train_df.merge(pic_df_tmp, how= "outer", on="pic_name")
-    print(train_df.head(20))
+                try:
+                    picdate = pic.split("-")[2][:8]
+                except:
+                    picdate = "20200101"
+                train_df.loc[len(train_df)] = [pic, whale_id, picdate, 1, image]
+    
+    train_df['date'] = to_datetime(train_df['date'])
+    return train_df
 
-    train_df.to_pickle("pckle")
 
-
-def main():
-    resize_images()
-    remove_sea()
-    get_train_df()
+def work(train_df):
+    labels = train_df["id"]
+    features = train_df.iloc[:,4]
+    X=features
+    y=np.ravel(labels)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    
+    model = Sequential([
+        Flatten(input_shape=(256, 256)),
+        Dense(8, activation='relu'),
+        Dense(1, activation='sigmoid')
+    ])
     
 
+    model.compile(loss='binary_crossentropy',
+                optimizer='sgd',
+                metrics=['accuracy'])
+
+    X_train =  X_train.values
+    X_test = X_test.values      
+    print(X_train)
+    print("")
+    print(X_train[0])
+
+    model.fit(X_train, y_train, epochs=8, batch_size=1, verbose=1)
+
+def main():
+    #resize_images()
+    #remove_sea()
+    
+    work(get_train_df())
+    
+    
+
+
+    
 
 
 
